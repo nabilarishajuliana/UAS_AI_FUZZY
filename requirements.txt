@@ -1,0 +1,6 @@
+flask
+yfinance
+scikit-fuzzy
+pandas
+numpy
+flask-cors
