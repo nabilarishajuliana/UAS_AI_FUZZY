@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FuzzyStock — Detail Saham</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F6F3;color:#181C17;-webkit-font-smoothing:antialiased;}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#D0D6CC;border-radius:4px}
+:root{
+  --bg:#F4F6F3;--surface:#FFFFFF;--surface2:#F0F3EE;
+  --border:#E2E6DF;--border2:#CDD3C9;
+  --text:#181C17;--text2:#526050;--text3:#96A492;
+  --green:#1A9B72;--green-l:#E6F5EF;--green-m:#9FDBC6;--green-d:#0E6B4F;
+  --red:#D44848;--red-l:#FDEEED;--red-m:#F5AAAA;
+  --amber:#B87318;--amber-l:#FDF4E7;--amber-m:#EDCA8A;
+  --blue:#2A6FBF;--blue-l:#EBF3FC;--blue-m:#A3C4EE;
+  --f:'Plus Jakarta Sans',sans-serif;--mono:'DM Mono',monospace;
+  --sh:0 1px 3px rgba(0,0,0,.05);
+  --sh-md:0 4px 16px rgba(0,0,0,.08);
+}
+
+/* NAVBAR */
+.navbar{height:60px;background:rgba(255,255,255,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:0 2rem;position:sticky;top:0;z-index:200;}
+.back-btn{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:500;color:var(--text2);background:none;border:none;cursor:pointer;padding:7px 12px;border-radius:10px;transition:all .15s;}
+.back-btn:hover{background:var(--surface2);color:var(--text);}
+.back-btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;}
+.nav-div{width:1px;height:20px;background:var(--border2);}
+.nav-ticker-name{font-size:14px;font-weight:800;color:var(--text);}
+.nav-ticker-sub{font-size:11px;color:var(--text3);}
+
+/* HERO */
+.det-hero-wrap{background:var(--surface);border-bottom:1px solid var(--border);}
+.det-hero{max-width:1100px;margin:0 auto;padding:2rem 2rem;display:flex;align-items:flex-start;justify-content:space-between;gap:2rem;}
+.det-exchange{font-family:var(--mono);font-size:11px;color:var(--text3);margin-bottom:6px;}
+.det-price{font-family:var(--mono);font-size:42px;font-weight:500;color:var(--text);line-height:1;}
+.det-chg{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:12px;font-weight:500;padding:4px 13px;border-radius:20px;margin-top:10px;}
+.det-meta{display:flex;gap:2.5rem;margin-top:1.5rem;flex-wrap:wrap;}
+.det-meta-item label{font-size:11px;color:var(--text3);display:block;margin-bottom:4px;}
+.det-meta-item span{font-family:var(--mono);font-size:14px;font-weight:500;color:var(--text);}
+.score-pill{display:inline-flex;align-items:center;gap:18px;padding:16px 22px;border-radius:20px;border:1px solid;}
+.sp-lbl{font-family:var(--mono);font-size:10px;opacity:.55;display:block;margin-bottom:2px;}
+.sp-num{font-family:var(--mono);font-size:36px;font-weight:500;line-height:1;}
+.sp-sep{width:1px;height:52px;background:currentColor;opacity:.12;}
+.sp-rec{font-size:20px;font-weight:800;}
+
+/* BODY */
+.det-body{max-width:1100px;margin:0 auto;padding:1.75rem 2rem;}
+.dcard{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.5rem;box-shadow:var(--sh);margin-bottom:1.25rem;}
+.dcard-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;}
+.dcard-title{font-size:14px;font-weight:700;color:var(--text);}
+.method-tag{font-family:var(--mono);font-size:10px;background:var(--blue-l);color:var(--blue);border:1px solid var(--blue-m);padding:4px 10px;border-radius:20px;}
+
+/* CHART */
+#chart-plotly{height:240px;}
+
+/* INDICATORS */
+.ind-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:1.25rem;}
+.icard{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.25rem;box-shadow:var(--sh);}
+.icard-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem;}
+.icard-name{font-family:var(--mono);font-size:11px;color:var(--text3);}
+.ibadge{font-family:var(--mono);font-size:10px;font-weight:500;padding:3px 10px;border-radius:20px;}
+.icard-val{font-family:var(--mono);font-size:32px;font-weight:500;color:var(--text);margin-bottom:.75rem;}
+.ibar-track{height:5px;background:var(--surface2);border-radius:3px;border:1px solid var(--border);overflow:hidden;margin-bottom:6px;}
+.ibar-fill{height:5px;border-radius:3px;}
+.ibar-scale{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--text3);}
+.macd-row{display:flex;align-items:center;gap:8px;margin-top:10px;}
+.macd-lbl{font-family:var(--mono);font-size:10px;color:var(--text3);}
+.macd-track{flex:1;height:5px;background:var(--surface2);border:1px solid var(--border);border-radius:3px;position:relative;overflow:hidden;}
+.macd-fill{position:absolute;top:0;height:5px;border-radius:3px;}
+.vol-row{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);}
+.vol-lbl{font-family:var(--mono);font-size:11px;color:var(--text3);}
+
+/* FUZZY */
+.score-area{display:flex;align-items:center;gap:1.5rem;margin-bottom:1.25rem;}
+.score-big{font-family:var(--mono);font-size:56px;font-weight:500;line-height:1;}
+.score-of{font-size:13px;color:var(--text3);margin-top:4px;}
+.sbar-track{height:8px;background:var(--surface2);border-radius:4px;border:1px solid var(--border);overflow:hidden;margin-bottom:7px;}
+.sbar-fill{height:8px;border-radius:4px;transition:width .6s cubic-bezier(.34,1.56,.64,1);}
+.sbar-zones{display:flex;height:3px;border-radius:2px;overflow:hidden;margin-bottom:6px;}
+.sz-s{flex:3;background:rgba(212,72,72,.35);}
+.sz-h{flex:2;background:rgba(184,115,24,.35);}
+.sz-b{flex:3;background:rgba(26,155,114,.35);}
+.sbar-labels{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--text3);}
+.rec-block{display:flex;align-items:center;gap:14px;padding:1rem 1.25rem;border-radius:10px;border:1px solid;margin-bottom:1.25rem;}
+.rec-block-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.rec-block-icon svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;}
+.rec-lbl{font-family:var(--mono);font-size:10px;opacity:.55;margin-bottom:3px;}
+.rec-name{font-size:22px;font-weight:800;}
+.rec-desc{font-size:12px;opacity:.65;margin-top:3px;}
+
+/* RULES */
+.rules-title{font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px;}
+.rules-stack{display:flex;flex-direction:column;gap:8px;}
+.rule-item{display:flex;align-items:flex-start;gap:10px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 14px;}
+.rule-dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0;margin-top:5px;}
+.rule-text{font-family:var(--mono);font-size:12px;color:var(--text2);line-height:1.55;flex:1;}
+.rule-text strong{color:var(--text);font-weight:500;}
+.rule-alpha{font-family:var(--mono);font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;background:var(--green-l);color:var(--green-d);border:1px solid var(--green-m);white-space:nowrap;margin-top:2px;}
+
+/* MF */
+.mf-tabs{display:flex;gap:4px;}
+.mf-tab{font-family:var(--mono);font-size:11px;padding:4px 12px;border-radius:20px;border:none;background:none;color:var(--text3);cursor:pointer;}
+.mf-tab.on{background:var(--green-l);color:var(--green-d);border:1px solid var(--green-m);}
+
+/* FUZZ DETAIL */
+.fuzz-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:1rem;}
+.fuzz-cell{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;}
+.fuzz-cell-title{font-size:11px;font-weight:600;color:var(--text);margin-bottom:8px;}
+.fuzz-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.fuzz-label{font-size:11px;color:var(--text2);}
+.fuzz-val{font-family:var(--mono);font-size:11px;font-weight:500;}
+.fuzz-bar{height:3px;border-radius:2px;margin-top:3px;margin-bottom:5px;background:var(--border);}
+.fuzz-bar-fill{height:3px;border-radius:2px;}
+
+/* FOOTER */
+.footer{border-top:1px solid var(--border);padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space-between;max-width:1100px;margin:0 auto;}
+.footer p{font-size:12px;color:var(--text3);}
+.footer span{font-family:var(--mono);font-size:10px;color:var(--text3);}
+
+/* LOADING */
+.loading-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem;gap:1rem;}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <button class="back-btn" onclick="window.location.href='index.html'">
+    <svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    Kembali
+  </button>
+  <div class="nav-div"></div>
+  <div>
+    <div class="nav-ticker-name" id="nav-ticker">—</div>
+    <div class="nav-ticker-sub" id="nav-name">Memuat data...</div>
+  </div>
+</nav>
+
+<!-- Loading state -->
+<div id="loading-state" class="loading-wrap">
+  <div class="spinner"></div>
+  <p style="font-size:14px;color:var(--text2);">Mengambil data dan menjalankan analisis fuzzy...</p>
+</div>
+
+<!-- Main content (hidden until data loaded) -->
+<div id="main-content" style="display:none;">
+
+  <!-- HERO -->
+  <div class="det-hero-wrap">
+    <div class="det-hero">
+      <div>
+        <div class="det-exchange">IDX · SAHAM BIASA · Data: Yahoo Finance</div>
+        <div class="det-price" id="d-price">—</div>
+        <div class="det-chg" id="d-chg">—</div>
+        <div class="det-meta">
+          <div class="det-meta-item"><label>RSI (14)</label><span id="d-rsi-meta">—</span></div>
+          <div class="det-meta-item"><label>MACD</label><span id="d-macd-meta">—</span></div>
+          <div class="det-meta-item"><label>Volume Ratio</label><span id="d-vol-meta">—</span></div>
+          <div class="det-meta-item"><label>Periode Data</label><span>3 Bulan</span></div>
+        </div>
+      </div>
+      <div>
+        <div class="score-pill" id="d-score-pill">
+          <div>
+            <span class="sp-lbl">DECISION SCORE</span>
+            <span class="sp-num" id="d-sp-num">—</span>
+          </div>
+          <div class="sp-sep"></div>
+          <div>
+            <span class="sp-lbl">REKOMENDASI</span>
+            <span class="sp-rec" id="d-sp-rec">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BODY -->
+  <div class="det-body">
+
+    <!-- Chart -->
+    <div class="dcard">
+      <div class="dcard-head">
+        <span class="dcard-title">Grafik Harga Historis</span>
+        <span style="font-size:12px;color:var(--text3);font-family:var(--mono);">3 Bulan Terakhir</span>
+      </div>
+      <div id="chart-plotly"></div>
+    </div>
+
+    <!-- Indicators -->
+    <div class="ind-row">
+      <div class="icard">
+        <div class="icard-head">
+          <span class="icard-name">RSI — Relative Strength Index (14)</span>
+          <span class="ibadge" id="d-rsi-badge">—</span>
+        </div>
+        <div class="icard-val" id="d-rsi-val">—</div>
+        <div class="ibar-track"><div class="ibar-fill" id="d-rsi-bar" style="width:0%;background:var(--green);"></div></div>
+        <div class="ibar-scale"><span>0 · Oversold</span><span>50</span><span>Overbought · 100</span></div>
+      </div>
+      <div class="icard">
+        <div class="icard-head">
+          <span class="icard-name">MACD — Moving Avg Convergence Divergence</span>
+          <span class="ibadge" id="d-macd-badge">—</span>
+        </div>
+        <div class="icard-val" id="d-macd-val">—</div>
+        <div class="macd-row">
+          <span class="macd-lbl">Bearish</span>
+          <div class="macd-track"><div class="macd-fill" id="d-macd-bar" style="left:50%;width:0%;background:var(--green);"></div></div>
+          <span class="macd-lbl">Bullish</span>
+        </div>
+        <div class="vol-row">
+          <span class="vol-lbl">Volume Ratio</span>
+          <span class="ibadge" id="d-vol-badge">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fuzzy Result -->
+    <div class="dcard">
+      <div class="dcard-head">
+        <span class="dcard-title">Hasil Analisis Fuzzy Mamdani</span>
+        <span class="method-tag">Defuzzifikasi: Centroid of Area</span>
+      </div>
+
+      <div class="score-area">
+        <div>
+          <div class="score-big" id="d-score-big">—</div>
+          <div class="score-of">dari 100</div>
+        </div>
+        <div style="flex:1;">
+          <div class="sbar-track"><div class="sbar-fill" id="d-sbar" style="width:0%;"></div></div>
+          <div class="sbar-zones"><div class="sz-s"></div><div class="sz-h"></div><div class="sz-b"></div></div>
+          <div class="sbar-labels"><span>Strong Sell (0–30)</span><span>Hold (40–60)</span><span>Strong Buy (70–100)</span></div>
+        </div>
+      </div>
+
+      <div class="rec-block" id="d-rec-block">
+        <div class="rec-block-icon" id="d-rec-icon">
+          <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        </div>
+        <div>
+          <div class="rec-lbl">Rekomendasi Sistem</div>
+          <div class="rec-name" id="d-rec-name">—</div>
+          <div class="rec-desc" id="d-rec-desc">—</div>
+        </div>
+      </div>
+
+      <div class="rules-title">Fuzzy Rules Aktif</div>
+      <div class="rules-stack" id="d-rules"></div>
+    </div>
+
+    <!-- Detail Fuzzifikasi -->
+    <div class="dcard">
+      <div class="dcard-head">
+        <span class="dcard-title">Detail Fuzzifikasi</span>
+        <span style="font-size:12px;color:var(--text3);">Derajat keanggotaan tiap input</span>
+      </div>
+      <div class="fuzz-grid" id="d-fuzz-grid"></div>
+    </div>
+
+    <!-- MF Visualization -->
+    <div class="dcard">
+      <div class="dcard-head">
+        <span class="dcard-title">Posisi pada Fungsi Keanggotaan (RSI)</span>
+        <div class="mf-tabs">
+          <button class="mf-tab on">RSI</button>
+        </div>
+      </div>
+      <svg width="100%" height="96" viewBox="0 0 820 96" style="display:block;overflow:visible;">
+        <line x1="20" y1="74" x2="800" y2="74" stroke="#E2E6DF" stroke-width="1.5"/>
+        <polygon points="20,16 20,74 224,74 278,16" fill="#FDEEED" stroke="#D44848" stroke-width="1.5" stroke-linejoin="round" opacity="0.85"/>
+        <text x="142" y="48" text-anchor="middle" font-size="11" font-weight="700" fill="#D44848" font-family="'Plus Jakarta Sans',sans-serif">Oversold</text>
+        <text x="142" y="62" text-anchor="middle" font-size="9" fill="#D44848" font-family="'DM Mono',monospace" opacity="0.7">0 – 35</text>
+        <polygon points="206,74 410,16 606,74" fill="#FDF4E7" stroke="#B87318" stroke-width="1.5" stroke-linejoin="round" opacity="0.85"/>
+        <text x="410" y="46" text-anchor="middle" font-size="11" font-weight="700" fill="#B87318" font-family="'Plus Jakarta Sans',sans-serif">Neutral</text>
+        <text x="410" y="60" text-anchor="middle" font-size="9" fill="#B87318" font-family="'DM Mono',monospace" opacity="0.7">20 – 80</text>
+        <polygon points="530,16 582,74 800,74 800,16" fill="#E6F5EF" stroke="#1A9B72" stroke-width="1.5" stroke-linejoin="round" opacity="0.85"/>
+        <text x="672" y="46" text-anchor="middle" font-size="11" font-weight="700" fill="#0E6B4F" font-family="'Plus Jakarta Sans',sans-serif">Overbought</text>
+        <text x="672" y="60" text-anchor="middle" font-size="9" fill="#0E6B4F" font-family="'DM Mono',monospace" opacity="0.7">65 – 100</text>
+        <text x="20" y="88" text-anchor="middle" font-size="10" fill="#96A492" font-family="'DM Mono',monospace">0</text>
+        <text x="224" y="88" text-anchor="middle" font-size="10" fill="#96A492" font-family="'DM Mono',monospace">30</text>
+        <text x="410" y="88" text-anchor="middle" font-size="10" fill="#96A492" font-family="'DM Mono',monospace">50</text>
+        <text x="582" y="88" text-anchor="middle" font-size="10" fill="#96A492" font-family="'DM Mono',monospace">70</text>
+        <text x="800" y="88" text-anchor="middle" font-size="10" fill="#96A492" font-family="'DM Mono',monospace">100</text>
+        <line id="mf-line" x1="350" y1="10" x2="350" y2="76" stroke="#2A6FBF" stroke-width="2" stroke-dasharray="4,3"/>
+        <circle id="mf-dot" cx="350" cy="10" r="4" fill="#2A6FBF"/>
+        <rect id="mf-label-bg" x="356" y="4" width="78" height="16" rx="4" fill="#EBF3FC"/>
+        <text id="mf-label" x="395" y="15" text-anchor="middle" font-size="10" fill="#2A6FBF" font-family="'DM Mono',monospace" font-weight="500">RSI = —</text>
+      </svg>
+    </div>
+
+  </div><!-- /det-body -->
+
+  <div style="max-width:1100px;margin:0 auto;border-top:1px solid var(--border);">
+    <div class="footer">
+      <p>FuzzyStock · Data dari Yahoo Finance · Diperbarui harian</p>
+      <span>scikit-fuzzy · Metode Mamdani</span>
+    </div>
+  </div>
+
+</div><!-- /main-content -->
+
+<script src="script.js"></script>
+</body>
+</html>

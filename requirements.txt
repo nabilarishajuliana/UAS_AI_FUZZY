@@ -1,6 +1,7 @@
 flask
+flask-cors
 yfinance
 scikit-fuzzy
 pandas
 numpy
-flask-cors
+matplotlib

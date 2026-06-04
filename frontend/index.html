@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FuzzyStock — Analisis Saham Cerdas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+/* ─── RESET ───────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F6F3;color:#181C17;-webkit-font-smoothing:antialiased;}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-thumb{background:#D0D6CC;border-radius:4px}
+
+/* ─── TOKENS ──────────────────────────────── */
+:root{
+  --bg:#F4F6F3; --surface:#FFFFFF; --surface2:#F0F3EE;
+  --border:#E2E6DF; --border2:#CDD3C9;
+  --text:#181C17; --text2:#526050; --text3:#96A492;
+  --green:#1A9B72; --green-l:#E6F5EF; --green-m:#9FDBC6; --green-d:#0E6B4F;
+  --red:#D44848; --red-l:#FDEEED; --red-m:#F5AAAA;
+  --amber:#B87318; --amber-l:#FDF4E7; --amber-m:#EDCA8A;
+  --f:'Plus Jakarta Sans',sans-serif; --mono:'DM Mono',monospace;
+  --sh:0 1px 3px rgba(0,0,0,.05);
+  --sh-md:0 4px 16px rgba(0,0,0,.08),0 1px 3px rgba(0,0,0,.04);
+}
+
+/* ─── NAVBAR ──────────────────────────────── */
+.navbar{height:60px;background:rgba(255,255,255,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 2rem;position:sticky;top:0;z-index:200;}
+.nav-brand{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:800;color:var(--text);text-decoration:none;}
+.logo-mark{width:32px;height:32px;border-radius:9px;background:var(--green);display:flex;align-items:center;justify-content:center;}
+.logo-mark svg{width:17px;height:17px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;}
+.nav-badge{font-family:var(--mono);font-size:10px;background:var(--green-l);color:var(--green-d);border:1px solid var(--green-m);padding:3px 9px;border-radius:20px;}
+.nav-links{display:flex;gap:1.75rem;align-items:center;}
+.nav-links a{font-size:13px;font-weight:500;color:var(--text2);text-decoration:none;transition:color .15s;}
+.nav-links a:hover,.nav-links a.active{color:var(--green);}
+.nav-cta{font-size:13px;font-weight:600;color:var(--green-d);background:var(--green-l);border:1px solid var(--green-m);padding:7px 16px;border-radius:10px;text-decoration:none;}
+
+/* ─── TICKER ──────────────────────────────── */
+.ticker{background:var(--green);height:36px;overflow:hidden;display:flex;align-items:center;}
+.ticker-track{display:flex;animation:scroll-t 35s linear infinite;white-space:nowrap;}
+@keyframes scroll-t{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.ti{display:inline-flex;align-items:center;gap:8px;padding:0 20px;border-right:1px solid rgba(255,255,255,.2);height:36px;}
+.ti-sym{font-family:var(--mono);font-size:11px;font-weight:500;color:rgba(255,255,255,.65);}
+.ti-price{font-family:var(--mono);font-size:12px;color:#fff;}
+.ti-up{font-family:var(--mono);font-size:11px;color:#B4EED8;}
+.ti-dn{font-family:var(--mono);font-size:11px;color:#FFD0C4;}
+
+/* ─── HERO ────────────────────────────────── */
+.hero{background:var(--surface);border-bottom:1px solid var(--border);padding:72px 2rem 64px;text-align:center;}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:7px;background:var(--green-l);color:var(--green-d);border:1px solid var(--green-m);font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;padding:5px 13px;border-radius:20px;margin-bottom:1.5rem;}
+.eyebrow-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 2s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.hero h1{font-size:52px;font-weight:800;line-height:1.1;letter-spacing:-1.2px;color:var(--text);margin-bottom:1.25rem;max-width:660px;margin-left:auto;margin-right:auto;}
+.hero h1 .hl{color:var(--green);}
+.hero-desc{font-size:16px;line-height:1.8;color:var(--text2);max-width:480px;margin:0 auto 2.25rem;}
+.hero-btns{display:flex;align-items:center;justify-content:center;gap:12px;}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--green);color:#fff;font-family:var(--f);font-size:14px;font-weight:700;padding:13px 26px;border-radius:10px;border:none;cursor:pointer;text-decoration:none;transition:background .15s,transform .1s;}
+.btn-primary:hover{background:var(--green-d);transform:translateY(-1px);}
+.btn-primary svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;}
+.btn-ghost{display:inline-flex;align-items:center;gap:8px;background:transparent;color:var(--text2);font-family:var(--f);font-size:14px;font-weight:600;padding:13px 22px;border-radius:10px;border:1px solid var(--border2);cursor:pointer;text-decoration:none;transition:all .15s;}
+.btn-ghost:hover{border-color:var(--green);color:var(--green);}
+
+/* ─── HERO CHART IMAGE ────────────────────── */
+.hero-chart-wrap{max-width:900px;margin:3rem auto 0;border-radius:16px;overflow:hidden;border:1px solid var(--border);box-shadow:var(--sh-md);}
+.hero-chart-wrap img{width:100%;display:block;}
+.hero-chart-placeholder{background:var(--surface2);padding:3rem;text-align:center;color:var(--text3);font-size:13px;}
+
+/* ─── SECTION 2: Tagline ──────────────────── */
+.tagline-section{background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:64px 2rem;text-align:center;}
+.tagline-section h2{font-size:40px;font-weight:800;line-height:1.2;letter-spacing:-.8px;color:var(--text);margin-bottom:1rem;}
+.tagline-section h2 .hl{color:var(--green);}
+.tagline-section p{font-size:15px;color:var(--text2);line-height:1.75;max-width:460px;margin:0 auto;}
+
+/* ─── STATS STRIP ─────────────────────────── */
+.stats-strip{background:var(--surface);border-bottom:1px solid var(--border);}
+.stats-inner{max-width:1100px;margin:0 auto;padding:0 2rem;display:grid;grid-template-columns:repeat(4,1fr);}
+.stat-cell{padding:1.25rem 0;border-right:1px solid var(--border);display:flex;flex-direction:column;gap:4px;}
+.stat-cell:last-child{border-right:none;padding-left:1.5rem;}
+.stat-cell:not(:first-child){padding-left:1.5rem;}
+.stat-num{font-family:var(--mono);font-size:24px;font-weight:500;color:var(--text);}
+.stat-num.accent{color:var(--green);}
+.stat-lbl{font-size:12px;color:var(--text3);}
+
+/* ─── STOCK SECTION ───────────────────────── */
+.section{max-width:1100px;margin:0 auto;padding:2.5rem 2rem;}
+.sec-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:1.5rem;}
+.sec-title{font-size:18px;font-weight:700;color:var(--text);}
+.sec-sub{font-size:12px;color:var(--text3);margin-top:4px;}
+.filter-chips{display:flex;gap:6px;}
+.chip{font-size:12px;font-weight:500;font-family:var(--f);padding:6px 14px;border-radius:20px;border:1px solid var(--border2);background:var(--surface);color:var(--text2);cursor:pointer;transition:all .15s;}
+.chip:hover{border-color:var(--green);color:var(--green);}
+.chip.on{background:var(--green-l);border-color:var(--green-m);color:var(--green-d);}
+
+/* ─── STOCK GRID ──────────────────────────── */
+.stock-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+.scard{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.2rem;cursor:pointer;box-shadow:var(--sh);transition:box-shadow .2s,transform .15s,border-color .2s;position:relative;}
+.scard:hover{box-shadow:var(--sh-md);transform:translateY(-3px);border-color:var(--border2);}
+.scard-loading{opacity:.5;pointer-events:none;}
+.scard-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
+.scard-av{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:500;border:1px solid var(--border);}
+.badge{font-family:var(--mono);font-size:9px;font-weight:500;letter-spacing:.4px;padding:3px 9px;border-radius:20px;}
+.badge-buy{background:var(--green-l);color:var(--green-d);border:1px solid var(--green-m);}
+.badge-hold{background:var(--amber-l);color:var(--amber);border:1px solid var(--amber-m);}
+.badge-sell{background:var(--red-l);color:var(--red);border:1px solid var(--red-m);}
+.scard-ticker{font-size:16px;font-weight:800;color:var(--text);letter-spacing:-.3px;}
+.scard-name{font-size:11px;color:var(--text3);margin-top:2px;margin-bottom:.9rem;line-height:1.4;}
+.scard-price{font-family:var(--mono);font-size:18px;font-weight:500;color:var(--text);}
+.scard-chg{font-family:var(--mono);font-size:11px;margin-top:3px;}
+.c-up{color:var(--green);} .c-dn{color:var(--red);}
+.scard-chart{margin-top:1rem;display:block;width:100%;height:40px;}
+
+/* ─── LOADING SKELETON ────────────────────── */
+.skeleton{background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:6px;}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ─── METHODOLOGY SECTION ─────────────────── */
+.method-section{background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:64px 2rem;}
+.method-inner{max-width:1100px;margin:0 auto;}
+.method-header{text-align:center;margin-bottom:3rem;}
+.method-header h2{font-size:40px;font-weight:800;letter-spacing:-.8px;color:var(--text);margin-bottom:.75rem;}
+.method-header h2 .hl{color:var(--green);}
+.method-header p{font-size:15px;color:var(--text2);line-height:1.75;max-width:520px;margin:0 auto;}
+.method-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem;}
+.method-card{background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:1.5rem;}
+.method-card-header{display:flex;align-items:center;gap:12px;margin-bottom:1rem;}
+.method-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;}
+.method-icon svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;}
+.method-card-title{font-size:14px;font-weight:700;color:var(--text);}
+.method-card-subtitle{font-size:11px;margin-top:2px;}
+.method-card p{font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:.75rem;}
+.method-card ul{list-style:none;display:flex;flex-direction:column;gap:5px;}
+.method-card ul li{font-size:12px;color:var(--text2);padding-left:1rem;position:relative;}
+.method-card ul li::before{content:'•';position:absolute;left:0;color:var(--green);}
+.method-badge{display:inline-block;font-family:var(--mono);font-size:10px;padding:3px 9px;border-radius:20px;margin-top:.5rem;}
+
+/* ─── HOW IT WORKS ────────────────────────── */
+.how-section{background:var(--bg);border-bottom:1px solid var(--border);padding:64px 2rem;}
+.how-inner{max-width:1100px;margin:0 auto;}
+.how-header{text-align:center;margin-bottom:2.5rem;}
+.how-header h2{font-size:32px;font-weight:800;letter-spacing:-.5px;color:var(--text);margin-bottom:.5rem;}
+.how-header p{font-size:14px;color:var(--text2);}
+.how-grid{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--border);border-radius:16px;overflow:hidden;}
+.how-cell{background:var(--surface);padding:2rem;border-right:1px solid var(--border);}
+.how-cell:last-child{border-right:none;}
+.how-step{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--green);margin-bottom:1rem;}
+.how-icon-box{width:42px;height:42px;border-radius:10px;background:var(--green-l);border:1px solid var(--green-m);display:flex;align-items:center;justify-content:center;margin-bottom:1rem;}
+.how-icon-box svg{width:20px;height:20px;stroke:var(--green-d);fill:none;stroke-width:2;stroke-linecap:round;}
+.how-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px;}
+.how-desc{font-size:12px;color:var(--text2);line-height:1.7;}
+.how-tag{display:inline-block;margin-top:12px;font-family:var(--mono);font-size:10px;background:var(--surface2);color:var(--text3);padding:3px 9px;border-radius:5px;border:1px solid var(--border);}
+
+/* ─── FOOTER ──────────────────────────────── */
+.footer{border-top:1px solid var(--border);padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space-between;max-width:1100px;margin:0 auto;}
+.footer p{font-size:12px;color:var(--text3);}
+.footer span{font-family:var(--mono);font-size:10px;color:var(--text3);}
+
+/* ─── TOAST NOTIF ─────────────────────────── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--text);color:#fff;font-size:13px;padding:10px 18px;border-radius:10px;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;}
+.toast.show{opacity:1;}
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a class="nav-brand" href="#">
+    <div class="logo-mark">
+      <svg viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+    </div>
+    FuzzyStock
+    <span class="nav-badge">MAMDANI</span>
+  </a>
+  <div class="nav-links">
+    <a href="#" class="active">Beranda</a>
+    <a href="#saham">Saham</a>
+    <a href="#metode">Metodologi</a>
+    <a href="#" class="nav-cta">Tentang Sistem</a>
+  </div>
+</nav>
+
+<!-- TICKER TAPE -->
+<div class="ticker">
+  <div class="ticker-track" id="ticker-track">
+    <!-- Diisi oleh JavaScript dari API -->
+    <div class="ti"><span class="ti-sym">LOADING</span><span class="ti-price">...</span></div>
+  </div>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-eyebrow"><div class="eyebrow-dot"></div>Sistem Pendukung Keputusan Investasi</div>
+  <h1>Analisis saham lebih<br/><span class="hl">cerdas</span> dengan<br/>logika fuzzy</h1>
+  <p class="hero-desc">Menggunakan metode Mamdani untuk mengolah indikator teknikal RSI, MACD, dan Volume menjadi rekomendasi investasi yang jelas dan mudah dipahami.</p>
+  <div class="hero-btns">
+    <button class="btn-primary" onclick="document.getElementById('saham').scrollIntoView({behavior:'smooth'})">
+      Lihat Daftar Saham
+      <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </button>
+    <button class="btn-ghost" onclick="document.getElementById('metode').scrollIntoView({behavior:'smooth'})">Pelajari Metodologi</button>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats-strip">
+  <div class="stats-inner">
+    <div class="stat-cell"><span class="stat-num">8</span><span class="stat-lbl">Saham IDX tersedia</span></div>
+    <div class="stat-cell"><span class="stat-num">3</span><span class="stat-lbl">Indikator teknikal</span></div>
+    <div class="stat-cell"><span class="stat-num accent">27</span><span class="stat-lbl">Fuzzy rules aktif</span></div>
+    <div class="stat-cell"><span class="stat-num">5</span><span class="stat-lbl">Output keputusan</span></div>
+  </div>
+</div>
+
+<!-- TAGLINE -->
+<section class="tagline-section">
+  <h2>Beli saham pilihan mu<br/>berdasarkan analisis<br/><span class="hl">berbasis data</span></h2>
+  <p>Membantu mengetahui apakah saham favorit sedang dalam kondisi terbaik untuk masuk ke portofolio.</p>
+</section>
+
+<!-- STOCK GRID -->
+<div id="saham" style="background:var(--bg);">
+  <div class="section">
+    <div class="sec-head">
+      <div>
+        <div class="sec-title">Daftar Saham IDX</div>
+        <div class="sec-sub">Klik kartu untuk melihat analisis lengkap fuzzy Mamdani</div>
+      </div>
+      <div class="filter-chips">
+        <button class="chip on" onclick="doFilter(this,'all')">Semua</button>
+        <button class="chip"    onclick="doFilter(this,'buy')">Buy</button>
+        <button class="chip"    onclick="doFilter(this,'hold')">Hold</button>
+        <button class="chip"    onclick="doFilter(this,'sell')">Sell</button>
+      </div>
+    </div>
+    <!-- Kartu diisi oleh JavaScript -->
+    <div class="stock-grid" id="stock-grid">
+      <!-- Skeleton loading -->
+      <div class="scard scard-loading" style="height:180px;"><div class="skeleton" style="height:100%;border-radius:12px;"></div></div>
+      <div class="scard scard-loading" style="height:180px;"><div class="skeleton" style="height:100%;border-radius:12px;"></div></div>
+      <div class="scard scard-loading" style="height:180px;"><div class="skeleton" style="height:100%;border-radius:12px;"></div></div>
+      <div class="scard scard-loading" style="height:180px;"><div class="skeleton" style="height:100%;border-radius:12px;"></div></div>
+      <div class="scard scard-loading" style="height:180px;"><div class="skeleton" style="height:100%;border-radius:12px;"></div></div>
+      <div class="scard scard-loading" style="height:180px;"><div class="skeleton" style="height:100%;border-radius:12px;"></div></div>
+      <div class="scard scard-loading" style="height:180px;"><div class="skeleton" style="height:100%;border-radius:12px;"></div></div>
+      <div class="scard scard-loading" style="height:180px;"><div class="skeleton" style="height:100%;border-radius:12px;"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- METHODOLOGY -->
+<section class="method-section" id="metode">
+  <div class="method-inner">
+    <div class="method-header">
+      <h2>Analisis saham secara akurat<br/>dengan algoritma <span class="hl">Sistem Inferensi Fuzzy</span></h2>
+      <p>Metodologi ini menggunakan 3 sistem inferensi Fuzzy Mamdani yang mengontrol tiga parameter teknikal sebagai variabel input untuk menghasilkan keputusan investasi.</p>
+    </div>
+
+    <div class="method-grid">
+      <!-- RSI Card -->
+      <div class="method-card">
+        <div class="method-card-header">
+          <div class="method-icon" style="background:#FDEEED;color:#D44848;">
+            <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          </div>
+          <div>
+            <div class="method-card-title">RSI — Apa & Fungsinya?</div>
+            <div class="method-card-subtitle" style="color:#D44848;">Pengukur momentum harga</div>
+          </div>
+        </div>
+        <p>RSI mengukur kecepatan dan besarnya perubahan harga. Nilai RSI tinggi mengindikasikan overbought, nilai rendah mengindikasikan oversold. Analogi: Termometer pasar saham.</p>
+        <ul>
+          <li><strong>Oversold — RSI &lt; 30:</strong> Potensi harga akan naik → sinyal Beli</li>
+          <li><strong>Neutral — RSI 30–70:</strong> Kondisi normal, tidak ada sinyal ekstrem</li>
+          <li><strong>Overbought — RSI &gt; 70:</strong> Potensi harga akan turun → sinyal Jual</li>
+        </ul>
+        <div class="method-badge" style="background:var(--red-l);color:var(--red);border:1px solid var(--red-m);">RSI = 100 − (100 / (1 + RS))</div>
+      </div>
+
+      <!-- MACD Card -->
+      <div class="method-card">
+        <div class="method-card-header">
+          <div class="method-icon" style="background:#E6F5EF;color:#0E6B4F;">
+            <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <div>
+            <div class="method-card-title">MACD — Apa & Fungsinya?</div>
+            <div class="method-card-subtitle" style="color:#0E6B4F;">Pengukur momentum tren</div>
+          </div>
+        </div>
+        <p>MACD mengukur hubungan antara dua EMA untuk mengidentifikasi arah tren dan kekuatan momentum. Komponen: EMA 12, EMA 26, Signal Line, dan Histogram.</p>
+        <ul>
+          <li><strong>Histogram &gt; 0.1 → Bullish:</strong> Momentum naik</li>
+          <li><strong>Histogram -0.1 ~ +0.1 → Sideways:</strong> Momentum tidak jelas</li>
+          <li><strong>Histogram &lt; -0.1 → Bearish:</strong> Momentum turun</li>
+        </ul>
+        <div class="method-badge" style="background:var(--green-l);color:var(--green-d);border:1px solid var(--green-m);">Histogram = MACD Line − Signal Line</div>
+      </div>
+    </div>
+
+    <!-- Volume Card (full width) -->
+    <div class="method-card">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5rem;">
+        <div>
+          <div class="method-card-header">
+            <div class="method-icon" style="background:#F0EEFF;color:#534AB7;">
+              <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><rect x="7" y="10" width="3" height="7"/><rect x="12" y="6" width="3" height="11"/><rect x="17" y="13" width="3" height="4"/></svg>
+            </div>
+            <div>
+              <div class="method-card-title">Volume — Apa & Fungsinya?</div>
+              <div class="method-card-subtitle" style="color:#534AB7;">Validator kekuatan sinyal</div>
+            </div>
+          </div>
+          <p>Volume adalah jumlah lembar saham yang diperdagangkan. Fungsinya sebagai <strong>validator</strong> — memperkuat atau memperlemah sinyal dari RSI dan MACD.</p>
+          <p style="margin-top:.5rem;font-size:12px;color:var(--amber);">Kita pakai Volume Ratio karena perlu dibandingkan antar saham yang berbeda.</p>
+        </div>
+        <div>
+          <div class="method-card-title" style="margin-bottom:.75rem;">Cara Hitung Volume Ratio</div>
+          <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;font-family:var(--mono);font-size:11px;color:var(--text);line-height:1.8;">
+            Volume Ratio =<br/>Volume Hari Ini<br/>──────────────<br/>Rata-rata Vol 20 Hari
+          </div>
+          <div style="margin-top:.75rem;display:flex;flex-direction:column;gap:4px;">
+            <div style="font-size:11px;color:var(--text2);">• &lt; 0.7x → <strong>Low</strong> (sepi)</div>
+            <div style="font-size:11px;color:var(--text2);">• 0.7 – 1.3x → <strong>Average</strong> (normal)</div>
+            <div style="font-size:11px;color:var(--text2);">• &gt; 1.3x → <strong>High</strong> (ramai)</div>
+          </div>
+        </div>
+        <div>
+          <div class="method-card-title" style="margin-bottom:.75rem;">Pengaruh Volume ke Rekomendasi</div>
+          <table style="width:100%;font-size:11px;border-collapse:collapse;">
+            <tr style="background:var(--surface2);">
+              <th style="padding:5px 8px;text-align:left;font-size:10px;color:var(--text3);">MACD</th>
+              <th style="padding:5px 8px;text-align:left;font-size:10px;color:var(--text3);">Volume</th>
+              <th style="padding:5px 8px;text-align:left;font-size:10px;color:var(--text3);">Hasil</th>
+            </tr>
+            <tr><td style="padding:4px 8px;">Bullish</td><td style="padding:4px 8px;color:var(--green);">High</td><td style="padding:4px 8px;font-weight:600;color:var(--green);">Strong Buy</td></tr>
+            <tr><td style="padding:4px 8px;">Bullish</td><td style="padding:4px 8px;color:var(--amber);">Low</td><td style="padding:4px 8px;font-weight:600;color:var(--amber);">Buy</td></tr>
+            <tr><td style="padding:4px 8px;">Bearish</td><td style="padding:4px 8px;color:var(--green);">High</td><td style="padding:4px 8px;font-weight:600;color:var(--red);">Strong Sell</td></tr>
+            <tr><td style="padding:4px 8px;">Bearish</td><td style="padding:4px 8px;color:var(--amber);">Low</td><td style="padding:4px 8px;font-weight:600;color:var(--amber);">Sell</td></tr>
+            <tr><td style="padding:4px 8px;">Sideways</td><td style="padding:4px 8px;">Any</td><td style="padding:4px 8px;font-weight:600;color:var(--amber);">Hold</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how-section">
+  <div class="how-inner">
+    <div class="how-header">
+      <h2>Cara Kerja Sistem</h2>
+      <p>Pipeline analisis dari data mentah hingga rekomendasi</p>
+    </div>
+    <div class="how-grid">
+      <div class="how-cell">
+        <div class="how-step">01 / 03</div>
+        <div class="how-icon-box"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+        <div class="how-title">Ambil Data Historis</div>
+        <div class="how-desc">Data OHLCV 3 bulan terakhir diambil otomatis dari Yahoo Finance menggunakan library yfinance. Tidak perlu input manual.</div>
+        <span class="how-tag">yfinance · OHLCV</span>
+      </div>
+      <div class="how-cell">
+        <div class="how-step">02 / 03</div>
+        <div class="how-icon-box"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+        <div class="how-title">Hitung Indikator</div>
+        <div class="how-desc">RSI (14 periode), MACD (12-26-9), dan Volume Ratio dihitung dari data historis. Nilai terbaru digunakan sebagai input fuzzy.</div>
+        <span class="how-tag">RSI · MACD · Volume</span>
+      </div>
+      <div class="how-cell">
+        <div class="how-step">03 / 03</div>
+        <div class="how-icon-box"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg></div>
+        <div class="how-title">Inferensi Mamdani</div>
+        <div class="how-desc">27 fuzzy rules dievaluasi, hasilnya diagregasi dan didefuzzifikasi menggunakan metode Centroid of Area menjadi Decision Score.</div>
+        <span class="how-tag">scikit-fuzzy · CoA</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div style="max-width:1100px;margin:0 auto;">
+  <div class="footer">
+    <p>FuzzyStock · Proyek UAS Logika Fuzzy · Teknik Informatika</p>
+    <span>Metode Mamdani · YFinance · scikit-fuzzy</span>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
