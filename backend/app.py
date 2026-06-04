@@ -218,21 +218,6 @@ def health_check():
 # ─────────────────────────────────────────────────────
 
 if __name__ == '__main__':
-    print("=" * 50)
-    print("  FuzzyStock API Server")
-    print("  http://localhost:5000")
-    print("=" * 50)
-    print("\nEndpoint tersedia:")
-    print("  GET /api/health")
-    print("  GET /api/stocks")
-    print("  GET /api/analyze/<ticker>")
-    print("\nContoh:")
-    print("  http://localhost:5000/api/health")
-    print("  http://localhost:5000/api/analyze/BBCA")
-    print("\n" + "=" * 50)
-
-    app.run(
-        host="0.0.0.0",  # bisa diakses dari mana saja di jaringan lokal
-        port=5000,
-        debug=False,     # matikan debug di production
-    )
+    import os
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
