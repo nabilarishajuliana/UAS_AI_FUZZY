@@ -29,11 +29,17 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F6F3;color:#181C17
 }
 
 /* ─── NAVBAR ──────────────────────────────── */
-.navbar{height:60px;background:rgba(255,255,255,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 2rem;position:sticky;top:0;z-index:200;}
+.navbar{height:60px;background:rgba(255,255,255,.92);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 2rem;position:sticky;top:0;z-index:200;}
 .nav-brand{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:800;color:var(--text);text-decoration:none;}
+.nav-left{display:flex;align-items:center;gap:14px;min-width:0;}
 .logo-mark{width:32px;height:32px;border-radius:9px;background:var(--green);display:flex;align-items:center;justify-content:center;}
 .logo-mark svg{width:17px;height:17px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;}
 .nav-badge{font-family:var(--mono);font-size:10px;background:var(--green-l);color:var(--green-d);border:1px solid var(--green-m);padding:3px 9px;border-radius:20px;}
+.nav-search{display:flex;align-items:center;gap:8px;min-width:min(100%, 520px);}
+.nav-search-input{width:min(100%, 420px);height:38px;border-radius:11px;border:1px solid var(--border2);background:var(--surface);padding:0 14px;font-family:var(--f);font-size:13px;color:var(--text);outline:none;}
+.nav-search-input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(26,155,114,.12);}
+.nav-search-btn{height:38px;padding:0 14px;border:none;border-radius:11px;background:var(--green);color:#fff;font-family:var(--f);font-size:13px;font-weight:700;cursor:pointer;}
+.nav-search-btn:hover{background:var(--green-d);}
 .nav-links{display:flex;gap:1.75rem;align-items:center;}
 .nav-links a{font-size:13px;font-weight:500;color:var(--text2);text-decoration:none;transition:color .15s;}
 .nav-links a:hover,.nav-links a.active{color:var(--green);}
@@ -100,6 +106,13 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F6F3;color:#181C17
 .scard{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.2rem;cursor:pointer;box-shadow:var(--sh);transition:box-shadow .2s,transform .15s,border-color .2s;position:relative;}
 .scard:hover{box-shadow:var(--sh-md);transform:translateY(-3px);border-color:var(--border2);}
 .scard-loading{opacity:.5;pointer-events:none;}
+.search-empty{grid-column:1/-1;background:var(--surface);border:1px dashed var(--border2);border-radius:16px;padding:2rem;text-align:center;box-shadow:var(--sh);}
+.search-empty h3{font-size:18px;font-weight:800;color:var(--text);margin-bottom:.5rem;}
+.search-empty p{font-size:13px;color:var(--text2);line-height:1.7;max-width:560px;margin:0 auto;}
+.search-suggestion{cursor:pointer;}
+.search-card-hint{margin-top:12px;border:1px dashed var(--border2);border-radius:10px;padding:10px;font-size:12px;color:var(--text3);text-align:center;background:var(--surface2);}
+.search-results-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:1rem;}
+.search-results-label{font-size:12px;color:var(--text3);}
 .scard-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
 .scard-av{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:500;border:1px solid var(--border);}
 .badge{font-family:var(--mono);font-size:9px;font-weight:500;letter-spacing:.4px;padding:3px 9px;border-radius:20px;}
@@ -109,6 +122,12 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F6F3;color:#181C17
 .scard-ticker{font-size:16px;font-weight:800;color:var(--text);letter-spacing:-.3px;}
 .scard-name{font-size:11px;color:var(--text3);margin-top:2px;margin-bottom:.9rem;line-height:1.4;}
 .scard-price{font-family:var(--mono);font-size:18px;font-weight:500;color:var(--text);}
+.scard-metrics{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.metric-pill{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:999px;border:1px solid var(--border);background:var(--surface2);font-family:var(--mono);font-size:10px;color:var(--text2);line-height:1;}
+.metric-pill strong{font-weight:500;color:var(--text);}
+.metric-pill.vol{background:var(--blue-l);border-color:var(--blue-m);color:var(--blue);}
+.metric-pill.rsi{background:var(--amber-l);border-color:var(--amber-m);color:var(--amber);}
+.metric-pill.macd{background:var(--green-l);border-color:var(--green-m);color:var(--green-d);}
 .scard-chg{font-family:var(--mono);font-size:11px;margin-top:3px;}
 .c-up{color:var(--green);} .c-dn{color:var(--red);}
 .scard-chart{margin-top:1rem;display:block;width:100%;height:40px;}
@@ -167,13 +186,19 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F6F3;color:#181C17
 
 <!-- NAVBAR -->
 <nav class="navbar">
-  <a class="nav-brand" href="#">
-    <div class="logo-mark">
-      <svg viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
-    </div>
-    FuzzyStock
-    <span class="nav-badge">MAMDANI</span>
-  </a>
+  <div class="nav-left">
+    <a class="nav-brand" href="#">
+      <div class="logo-mark">
+        <svg viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+      </div>
+      FuzzyStock
+      <span class="nav-badge">MAMDANI</span>
+    </a>
+    <form class="nav-search" id="nav-search-form">
+      <input class="nav-search-input" id="nav-search-input" list="stock-search-list" placeholder="Cari kode saham: BBCA" autocomplete="off"/>
+      <button class="nav-search-btn" type="submit">Cari</button>
+    </form>
+  </div>
   <div class="nav-links">
     <a href="#" class="active">Beranda</a>
     <a href="#saham">Saham</a>
@@ -181,6 +206,8 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F6F3;color:#181C17
     <a href="#" class="nav-cta">Tentang Sistem</a>
   </div>
 </nav>
+
+<datalist id="stock-search-list"></datalist>
 
 <!-- TICKER TAPE -->
 <div class="ticker">
@@ -235,7 +262,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F6F3;color:#181C17
         <button class="chip"    onclick="doFilter(this,'sell')">Sell</button>
       </div>
     </div>
-    <!-- Kartu diisi oleh JavaScript -->
     <div class="stock-grid" id="stock-grid">
       <!-- Skeleton loading -->
       <div class="scard scard-loading" style="height:180px;"><div class="skeleton" style="height:100%;border-radius:12px;"></div></div>

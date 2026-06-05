@@ -27,6 +27,8 @@ const REC_CFG = {
   'Strong Sell': { bg:'#FDEEED', border:'#F5AAAA', color:'#AE2D2D', desc:'RSI overbought + MACD bearish. Sinyal kuat untuk keluar dari posisi.', badge:'badge-sell' },
 };
 
+let STOCK_UNIVERSE = [];
+
 // ─────────────────────────────────────────────────────
 // LANDING PAGE FUNCTIONS
 // ─────────────────────────────────────────────────────
@@ -36,6 +38,7 @@ const isLanding = document.getElementById('stock-grid') !== null;
 const isDetail  = document.getElementById('chart-plotly') !== null;
 
 if (isLanding) {
+  setupNavSearch();
   loadLandingPage();
 }
 
@@ -48,17 +51,27 @@ if (isDetail) {
 
 async function loadLandingPage() {
   try {
-    const res  = await fetch(`${API}/api/stocks`);
-    const json = await res.json();
+    const [stocksRes, universeRes] = await Promise.all([
+      fetch(`${API}/api/stocks`),
+      fetch(`${API}/api/universe`),
+    ]);
+
+    const json = await stocksRes.json();
+    const universeJson = await universeRes.json();
 
     if (json.status !== 'ok') throw new Error('API error');
+    if (universeJson.status !== 'ok') throw new Error('Universe API error');
 
     const stocks = json.data;
+    STOCK_UNIVERSE = universeJson.data || [];
 
     // Render ticker tape
     renderTicker(stocks);
 
-    // Render stock grid
+    // Populate search suggestions
+    populateSearchOptions(STOCK_UNIVERSE);
+
+    // Render stock grid seperti versi lama
     renderStockGrid(stocks);
 
   } catch (err) {
@@ -67,6 +80,78 @@ async function loadLandingPage() {
     document.getElementById('stock-grid').innerHTML =
       '<p style="color:#D44848;font-size:13px;grid-column:1/-1;text-align:center;padding:2rem;">Gagal memuat data. Pastikan server Flask berjalan di port 5000.</p>';
   }
+}
+
+
+function setupNavSearch() {
+  const form = document.getElementById('nav-search-form');
+  const input = document.getElementById('nav-search-input');
+
+  if (!form || !input) return;
+
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    handleStockSearch(input.value);
+  });
+
+  input.addEventListener('input', () => {
+    if (!input.value.trim()) {
+      return;
+    }
+  });
+}
+
+
+function populateSearchOptions(universe) {
+  const list = document.getElementById('stock-search-list');
+  if (!list) return;
+
+  list.innerHTML = universe.map(item => `<option value="${item.ticker}"></option>`).join('');
+}
+
+
+function normalizeSearchText(value) {
+  return (value || '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+
+function findStockMatches(query) {
+  const normalized = normalizeSearchText(query);
+  if (!normalized) return [];
+
+  const directTicker = STOCK_UNIVERSE.find(item => item.ticker === normalized);
+  if (directTicker) return [directTicker];
+
+  return STOCK_UNIVERSE.filter(item => normalizeSearchText(item.ticker).startsWith(normalized)).slice(0, 12);
+}
+
+
+function handleStockSearch(query) {
+  const cleaned = query.trim();
+
+  if (!cleaned) {
+    showToast('Masukkan kode saham, misalnya BBCA.');
+    return;
+  }
+
+  const matches = findStockMatches(cleaned);
+
+  if (matches.length === 0) {
+    showToast(`Kode saham "${cleaned}" tidak ditemukan.`);
+    return;
+  }
+
+  if (matches.length === 1) {
+    sessionStorage.setItem('ticker', matches[0].ticker);
+    window.location.href = 'detail.html';
+    return;
+  }
+
+  showToast(`Kode "${cleaned}" terlalu umum. Ketik kode lengkap, misalnya BBCA.`);
 }
 
 
@@ -105,6 +190,9 @@ function renderStockGrid(stocks) {
     const pct    = s.perubahan_persen ? Math.abs(s.perubahan_persen).toFixed(2) : '—';
     const recCat = s.rekomendasi?.includes('Buy')  ? 'buy' :
                    s.rekomendasi?.includes('Sell') ? 'sell' : 'hold';
+    const vol    = `${Number(s.volume_ratio || 0).toFixed(2)}x`;
+    const rsi    = `${Number(s.rsi || 0).toFixed(0)}`;
+    const macd   = s.macd_label || '—';
 
     // Mini chart SVG dari score
     const chartColor = cfg.color;
@@ -119,6 +207,11 @@ function renderStockGrid(stocks) {
         <div class="scard-ticker">${s.ticker}</div>
         <div class="scard-name">${s.nama}</div>
         <div class="scard-price">${harga}</div>
+        <div class="scard-metrics">
+          <span class="metric-pill vol">Vol <strong>${vol}</strong></span>
+          <span class="metric-pill rsi">RSI <strong>${rsi}</strong></span>
+          <span class="metric-pill macd">MACD <strong>${macd}</strong></span>
+        </div>
         <div class="scard-chg ${chgCls}">${arah} ${pct}% hari ini</div>
         ${chartSvg}
       </div>`;
@@ -242,6 +335,7 @@ function renderDetail(d) {
 
   // ── Grafik Plotly ───────────────────────────────────
   renderChart(d.chart, d.rekomendasi, cfg.color);
+  renderIndicatorCharts(d.chart);
 
   // ── RSI indicator ───────────────────────────────────
   document.getElementById('d-rsi-val').textContent = d.rsi;
@@ -310,13 +404,19 @@ function renderDetail(d) {
   }
 
   // ── MF Marker ───────────────────────────────────────
-  const mx = 20 + (Math.min(d.rsi, 100) / 100) * 780;
-  document.getElementById('mf-line').setAttribute('x1', mx.toFixed(1));
-  document.getElementById('mf-line').setAttribute('x2', mx.toFixed(1));
-  document.getElementById('mf-dot').setAttribute('cx', mx.toFixed(1));
-  document.getElementById('mf-label-bg').setAttribute('x', (mx + 5).toFixed(1));
-  document.getElementById('mf-label').setAttribute('x', (mx + 44).toFixed(1));
-  document.getElementById('mf-label').textContent = `RSI = ${d.rsi}`;
+  const mfLine = document.getElementById('mf-line');
+  const mfDot = document.getElementById('mf-dot');
+  const mfLabelBg = document.getElementById('mf-label-bg');
+  const mfLabel = document.getElementById('mf-label');
+  if (mfLine && mfDot && mfLabelBg && mfLabel) {
+    const mx = 20 + (Math.min(d.rsi, 100) / 100) * 780;
+    mfLine.setAttribute('x1', mx.toFixed(1));
+    mfLine.setAttribute('x2', mx.toFixed(1));
+    mfDot.setAttribute('cx', mx.toFixed(1));
+    mfLabelBg.setAttribute('x', (mx + 5).toFixed(1));
+    mfLabel.setAttribute('x', (mx + 44).toFixed(1));
+    mfLabel.textContent = `RSI = ${d.rsi}`;
+  }
 }
 
 
@@ -358,6 +458,207 @@ function renderChart(chartData, rekomendasi, color) {
   };
 
   Plotly.newPlot('chart-plotly', [trace], layout, {
+    responsive: true,
+    displayModeBar: false,
+  });
+}
+
+
+function calculateEmaSeries(values, period) {
+  if (!values || values.length === 0) return [];
+
+  const multiplier = 2 / (period + 1);
+  const series = [];
+  let ema = values[0];
+
+  values.forEach((value, index) => {
+    if (index === 0) {
+      ema = value;
+    } else {
+      ema = ((value - ema) * multiplier) + ema;
+    }
+    series.push(ema);
+  });
+
+  return series;
+}
+
+
+function calculateMovingAverageSeries(values, period) {
+  if (!values || values.length === 0) return [];
+
+  return values.map((_, index) => {
+    if (index + 1 < period) return null;
+    const start = index + 1 - period;
+    const chunk = values.slice(start, index + 1);
+    const sum = chunk.reduce((acc, value) => acc + value, 0);
+    return sum / period;
+  });
+}
+
+
+function calculateRsiSeries(values, period = 14) {
+  const series = new Array(values.length).fill(null);
+  if (values.length <= period) return series;
+
+  let gainSum = 0;
+  let lossSum = 0;
+
+  for (let i = 1; i <= period; i++) {
+    const delta = values[i] - values[i - 1];
+    if (delta >= 0) {
+      gainSum += delta;
+    } else {
+      lossSum += Math.abs(delta);
+    }
+  }
+
+  let avgGain = gainSum / period;
+  let avgLoss = lossSum / period;
+  series[period] = avgLoss === 0 ? 100 : 100 - (100 / (1 + (avgGain / avgLoss)));
+
+  for (let i = period + 1; i < values.length; i++) {
+    const delta = values[i] - values[i - 1];
+    const gain = Math.max(delta, 0);
+    const loss = Math.max(-delta, 0);
+
+    avgGain = ((avgGain * (period - 1)) + gain) / period;
+    avgLoss = ((avgLoss * (period - 1)) + loss) / period;
+
+    series[i] = avgLoss === 0 ? 100 : 100 - (100 / (1 + (avgGain / avgLoss)));
+  }
+
+  return series;
+}
+
+
+function renderIndicatorCharts(chartData) {
+  if (!chartData || chartData.length < 2) return;
+
+  const tanggal = chartData.map(c => c.tanggal);
+  const close   = chartData.map(c => c.close);
+  const volume  = chartData.map(c => c.volume);
+
+  const volumeMa = calculateMovingAverageSeries(volume, 20);
+  const rsiSeries = calculateRsiSeries(close, 14);
+
+  const ema12 = calculateEmaSeries(close, 12);
+  const ema26 = calculateEmaSeries(close, 26);
+  const macdLine = close.map((_, index) => ema12[index] - ema26[index]);
+  const signalLine = calculateEmaSeries(macdLine, 9);
+  const histogram = macdLine.map((value, index) => value - signalLine[index]);
+
+  const commonLayout = {
+    margin: { t: 6, r: 6, b: 28, l: 42 },
+    paper_bgcolor: 'transparent',
+    plot_bgcolor: 'transparent',
+    font: { family: 'DM Mono, monospace', size: 10, color: '#96A492' },
+    showlegend: false,
+    hovermode: 'x unified',
+    xaxis: {
+      gridcolor: '#F0F3EE',
+      showgrid: true,
+      zeroline: false,
+      tickfont: { size: 9 },
+    },
+  };
+
+  Plotly.newPlot('volume-plotly', [
+    {
+      x: tanggal,
+      y: volume,
+      type: 'bar',
+      marker: { color: '#1A9B7250' },
+      hovertemplate: '%{x}<br>Volume: %{y:,}<extra></extra>',
+    },
+    {
+      x: tanggal,
+      y: volumeMa,
+      type: 'scatter',
+      mode: 'lines',
+      line: { color: '#B87318', width: 2 },
+      hovertemplate: '%{x}<br>MA20: %{y:,.0f}<extra></extra>',
+    },
+  ], {
+    ...commonLayout,
+    yaxis: {
+      gridcolor: '#F0F3EE',
+      showgrid: true,
+      zeroline: false,
+      tickformat: ',.2s',
+    },
+  }, {
+    responsive: true,
+    displayModeBar: false,
+  });
+
+  Plotly.newPlot('rsi-plotly', [
+    {
+      x: tanggal,
+      y: rsiSeries,
+      type: 'scatter',
+      mode: 'lines',
+      line: { color: '#1A9B72', width: 2 },
+      fill: 'tozeroy',
+      fillcolor: '#1A9B7214',
+      hovertemplate: '%{x}<br>RSI: %{y:.2f}<extra></extra>',
+    },
+  ], {
+    ...commonLayout,
+    yaxis: {
+      range: [0, 100],
+      gridcolor: '#F0F3EE',
+      showgrid: true,
+      zeroline: false,
+      tickvals: [0, 30, 50, 70, 100],
+    },
+    shapes: [
+      { type: 'line', xref: 'paper', yref: 'y', x0: 0, x1: 1, y0: 30, y1: 30, line: { color: '#D44848', width: 1, dash: 'dot' } },
+      { type: 'line', xref: 'paper', yref: 'y', x0: 0, x1: 1, y0: 70, y1: 70, line: { color: '#1A9B72', width: 1, dash: 'dot' } },
+    ],
+  }, {
+    responsive: true,
+    displayModeBar: false,
+  });
+
+  const macdColors = histogram.map(v => (v >= 0 ? '#1A9B72' : '#D44848'));
+
+  Plotly.newPlot('macd-plotly', [
+    {
+      x: tanggal,
+      y: histogram,
+      type: 'bar',
+      marker: { color: macdColors },
+      hovertemplate: '%{x}<br>Histogram: %{y:.4f}<extra></extra>',
+    },
+    {
+      x: tanggal,
+      y: macdLine,
+      type: 'scatter',
+      mode: 'lines',
+      line: { color: '#0E6B4F', width: 2 },
+      hovertemplate: '%{x}<br>MACD: %{y:.4f}<extra></extra>',
+    },
+    {
+      x: tanggal,
+      y: signalLine,
+      type: 'scatter',
+      mode: 'lines',
+      line: { color: '#B87318', width: 2 },
+      hovertemplate: '%{x}<br>Signal: %{y:.4f}<extra></extra>',
+    },
+  ], {
+    ...commonLayout,
+    yaxis: {
+      gridcolor: '#F0F3EE',
+      showgrid: true,
+      zeroline: false,
+      tickformat: '.2f',
+    },
+    shapes: [
+      { type: 'line', xref: 'paper', yref: 'y', x0: 0, x1: 1, y0: 0, y1: 0, line: { color: '#96A492', width: 1, dash: 'dot' } },
+    ],
+  }, {
     responsive: true,
     displayModeBar: false,
   });

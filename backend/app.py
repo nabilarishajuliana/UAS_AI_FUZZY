@@ -10,7 +10,7 @@
 import matplotlib
 matplotlib.use('Agg')
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
 import sys
 import os
@@ -18,7 +18,13 @@ import os
 # Tambahkan folder backend ke path supaya bisa import modul lain
 sys.path.insert(0, os.path.dirname(__file__))
 
-from data_fetcher import get_stock_data, get_harga_sekarang, get_data_chart, DAFTAR_SAHAM
+from data_fetcher import (
+    get_stock_data,
+    get_harga_sekarang,
+    get_data_chart,
+    DAFTAR_SAHAM,
+    DAFTAR_SAHAM_SEMUA,
+)
 from indicators   import hitung_semua_indikator, calculate_macd
 from fuzzy_engine import analyze
 
@@ -32,6 +38,24 @@ app = Flask(__name__)
 # CORS = izinkan frontend (HTML di browser) akses API ini
 # Tanpa ini, browser akan blokir request dari frontend
 CORS(app)
+
+
+FRONTEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend"))
+
+
+@app.route('/')
+def index():
+    return send_from_directory(FRONTEND_DIR, 'index.html')
+
+
+@app.route('/detail.html')
+def detail_page():
+    return send_from_directory(FRONTEND_DIR, 'detail.html')
+
+
+@app.route('/script.js')
+def frontend_script():
+    return send_from_directory(FRONTEND_DIR, 'script.js')
 
 
 # ─────────────────────────────────────────────────────
@@ -176,11 +200,11 @@ def analyze_saham(ticker):
     print(f"\n[API] GET /api/analyze/{ticker}")
 
     # Validasi: pastikan ticker ada di daftar kita
-    if ticker not in DAFTAR_SAHAM:
+    if ticker not in DAFTAR_SAHAM_SEMUA:
         return jsonify({
             "status" : "error",
             "pesan"  : f"Ticker {ticker} tidak ada dalam daftar. "
-                       f"Pilih dari: {', '.join(DAFTAR_SAHAM.keys())}",
+                       f"Pilih dari: {', '.join(DAFTAR_SAHAM_SEMUA.keys())}",
         }), 404
 
     # Proses saham
@@ -213,6 +237,15 @@ def health_check():
     })
 
 
+@app.route('/api/universe', methods=['GET'])
+def get_universe():
+    return jsonify({
+        "status": "ok",
+        "jumlah": len(DAFTAR_SAHAM_SEMUA),
+        "data": [{"ticker": ticker, "nama": nama} for ticker, nama in DAFTAR_SAHAM_SEMUA.items()],
+    })
+
+
 # ─────────────────────────────────────────────────────
 # JALANKAN SERVER
 # ─────────────────────────────────────────────────────
@@ -234,5 +267,6 @@ if __name__ == '__main__':
     app.run(
         host="0.0.0.0",  # bisa diakses dari mana saja di jaringan lokal
         port=5000,
-        debug=False,     # matikan debug di production
+        debug=True,
+        use_reloader=True,
     )

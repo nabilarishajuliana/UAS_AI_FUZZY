@@ -8,9 +8,9 @@ import pandas as pd
 from datetime import datetime
 
 # ─────────────────────────────────────────────────────
-# DAFTAR 8 SAHAM IDX YANG KITA ANALISIS
+# DAFTAR SAHAM IDX
 # ─────────────────────────────────────────────────────
-DAFTAR_SAHAM = {
+DAFTAR_SAHAM_UTAMA = {
     "BBCA": "Bank Central Asia",
     "BBRI": "Bank Rakyat Indonesia",
     "ASII": "Astra International",
@@ -20,6 +20,109 @@ DAFTAR_SAHAM = {
     "BREN": "Barito Renewables Energy",
     "UNVR": "Unilever Indonesia",
 }
+
+DAFTAR_SAHAM_SEMUA = {
+    **DAFTAR_SAHAM_UTAMA,
+    "ACES": "Aspirasi Hidup Indonesia",
+    "ADRO": "Adaro Energy Indonesia",
+    "AKRA": "AKR Corporindo",
+    "AMRT": "Sumber Alfaria Trijaya",
+    "ANTM": "Aneka Tambang",
+    "ARTO": "Bank Jago",
+    "AUTO": "Astra Otoparts",
+    "BBNI": "Bank Negara Indonesia",
+    "BBTN": "Bank Tabungan Negara",
+    "BMRI": "Bank Mandiri",
+    "BRIS": "Bank Syariah Indonesia",
+    "BRPT": "Barito Pacific",
+    "BSDE": "Bumi Serpong Damai",
+    "BTPN": "Bank SMBC Indonesia",
+    "BTPS": "Bank BTPN Syariah",
+    "BREN": "Barito Renewables Energy",
+    "BYAN": "Bayan Resources",
+    "CAMP": "Campina Ice Cream Industry",
+    "CMRY": "Cisarua Mountain Dairy",
+    "CPIN": "Charoen Pokphand Indonesia",
+    "CTRA": "Ciputra Development",
+    "DMAS": "Puradelta Lestari",
+    "ELSA": "Elnusa",
+    "ERAA": "Erajaya Swasembada",
+    "EXCL": "XL Axiata",
+    "GJTL": "Gajah Tunggal",
+    "GOTO": "GoTo Gojek Tokopedia",
+    "HMSP": "HM Sampoerna",
+    "HRUM": "Harum Energy",
+    "ICBP": "Indofood CBP Sukses Makmur",
+    "INCO": "Vale Indonesia",
+    "INDF": "Indofood Sukses Makmur",
+    "INKP": "Indah Kiat Pulp & Paper",
+    "ITMG": "Indo Tambangraya Megah",
+    "JSMR": "Jasa Marga",
+    "JPFA": "Japfa Comfeed Indonesia",
+    "KLBF": "Kalbe Farma",
+    "KRAS": "Krakatau Steel",
+    "MBMA": "Merdeka Battery Materials",
+    "MAPI": "Mitra Adiperkasa",
+    "MDKA": "Merdeka Copper Gold",
+    "MEDC": "Medco Energi Internasional",
+    "MIDI": "Midi Utama Indonesia",
+    "MNCN": "Media Nusantara Citra",
+    "MYOR": "Mayora Indah",
+    "NCKL": "Trimegah Bangun Persada",
+    "PGAS": "Perusahaan Gas Negara",
+    "PGUN": "Pradiksi Gunatama",
+    "POWR": "Cikarang Listrindo",
+    "PTBA": "Bukit Asam",
+    "RAJA": "Rukun Raharja",
+    "RADL": "Darya-Varia Laboratoria",
+    "SCMA": "Surya Citra Media",
+    "SIDO": "Industri Jamu dan Farmasi Sido Muncul",
+    "SAME": "Sarana Meditama Metropolitan",
+    "SILO": "Siloam Hospitals",
+    "SMGR": "Semen Indonesia",
+    "TBIG": "Tower Bersama Infrastructure",
+    "TLKM": "Telkom Indonesia",
+    "TINS": "Timah",
+    "TPIA": "Chandra Asri Pacific",
+    "TOWR": "Sarana Menara Nusantara",
+    "TKIM": "Pabrik Kertas Tjiwi Kimia",
+    "UNTR": "United Tractors",
+    "UNVR": "Unilever Indonesia",
+    "AMMN": "Amman Mineral Internasional",
+    "BNBR": "Bakrie & Brothers",
+    "DSSA": "Dian Swastatika Sentosa",
+    "PGEO": "Pertamina Geothermal Energy",
+    "ABMM": "ABM Investama",
+    "ADMF": "Adira Dinamika Multi Finance",
+    "AALI": "Astra Agro Lestari",
+    "BBKP": "Bank KB Bukopin",
+    "BMAS": "Bank Maspion",
+    "BRMS": "Bumi Resources Minerals",
+    "DEWA": "Darma Henwa",
+    "DOID": "BUMA Internasional",
+    "ELPI": "Pelayaran Nasional Ekalya",
+    "ENRG": "Energi Mega Persada",
+    "FREN": "Smartfren Telecom",
+    "GGRM": "Gudang Garam",
+    "INDY": "Indika Energy",
+    "KAEF": "Kimia Farma",
+    "MAIN": "Malindo Feedmill",
+    "NISP": "Bank OCBC NISP",
+    "PTPP": "PP (Persero) Tbk",
+    "SMAR": "Sinar Mas Agro Resources",
+    "SRTG": "Saratoga Investama Sedaya",
+    "SSIA": "Surya Semesta Internusa",
+    "TAPG": "Triputra Agro Persada",
+    "TOBA": "TBS Energi Utama",
+    "WIKA": "Wijaya Karya",
+    "WIIM": "Wismilak Inti Makmur",
+    "WOOD": "Integra Indocabinet",
+    "WSKT": "Waskita Karya",
+    "EMTK": "Elang Mahkota Teknologi"
+}
+
+# Backward compatibility untuk kode yang masih memakai nama lama.
+DAFTAR_SAHAM = DAFTAR_SAHAM_UTAMA
 
 
 def format_ticker(ticker):
@@ -92,7 +195,7 @@ def get_stock_data(ticker):
         return {
             "df": df,
             "ticker_bersih": ticker_bersih,
-            "nama": DAFTAR_SAHAM.get(ticker_bersih, ticker_bersih),
+            "nama": DAFTAR_SAHAM_SEMUA.get(ticker_bersih, ticker_bersih),
         }
 
     except Exception as e:

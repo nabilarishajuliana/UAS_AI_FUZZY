@@ -59,6 +59,17 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F6F3;color:#181C17
 
 /* CHART */
 #chart-plotly{height:240px;}
+.indicator-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.mini-chart-card{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:1rem;}
+.mini-chart-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;}
+.mini-chart-title{font-size:12px;font-weight:700;color:var(--text);}
+.mini-chart-tag{font-family:var(--mono);font-size:10px;color:var(--text3);}
+.mini-chart{height:180px;}
+
+@media (max-width: 900px){
+  .indicator-grid{grid-template-columns:1fr;}
+  .mini-chart{height:160px;}
+}
 
 /* INDICATORS */
 .ind-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:1.25rem;}
@@ -134,7 +145,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F6F3;color:#181C17
 
 <!-- NAVBAR -->
 <nav class="navbar">
-  <button class="back-btn" onclick="window.location.href='index.html'">
+  <button class="back-btn" onclick="window.location.href='/'">
     <svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
     Kembali
   </button>
@@ -194,6 +205,36 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F6F3;color:#181C17
         <span style="font-size:12px;color:var(--text3);font-family:var(--mono);">3 Bulan Terakhir</span>
       </div>
       <div id="chart-plotly"></div>
+    </div>
+
+    <div class="dcard">
+      <div class="dcard-head">
+        <span class="dcard-title">Grafik Indikator Teknis</span>
+        <span style="font-size:12px;color:var(--text3);font-family:var(--mono);">Volume · RSI · MACD</span>
+      </div>
+      <div class="indicator-grid">
+        <div class="mini-chart-card">
+          <div class="mini-chart-head">
+            <span class="mini-chart-title">Volume</span>
+            <span class="mini-chart-tag">Bar + MA20</span>
+          </div>
+          <div id="volume-plotly" class="mini-chart"></div>
+        </div>
+        <div class="mini-chart-card">
+          <div class="mini-chart-head">
+            <span class="mini-chart-title">RSI</span>
+            <span class="mini-chart-tag">14 periode</span>
+          </div>
+          <div id="rsi-plotly" class="mini-chart"></div>
+        </div>
+        <div class="mini-chart-card">
+          <div class="mini-chart-head">
+            <span class="mini-chart-title">MACD</span>
+            <span class="mini-chart-tag">12 · 26 · 9</span>
+          </div>
+          <div id="macd-plotly" class="mini-chart"></div>
+        </div>
+      </div>
     </div>
 
     <!-- Indicators -->
