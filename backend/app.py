@@ -1,6 +1,6 @@
 # backend/app.py
 # =====================================================
-# Flask Backend API — FuzzyStock
+# Flask Backend API — FuzzyStock (Production Ready)
 #
 # Endpoint:
 #   GET /api/stocks           → daftar 8 saham
@@ -36,11 +36,11 @@ from fuzzy_engine import analyze
 app = Flask(__name__)
 
 # CORS = izinkan frontend (HTML di browser) akses API ini
-# Tanpa ini, browser akan blokir request dari frontend
 CORS(app)
 
-
-FRONTEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend"))
+# Menentukan letak folder frontend secara relatif dan aman untuk produksi
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+FRONTEND_DIR = os.path.abspath(os.path.join(BASE_DIR, "..", "frontend"))
 
 
 @app.route('/')
@@ -68,62 +68,65 @@ def proses_saham(ticker):
     Ambil data, hitung indikator, jalankan fuzzy.
     Return dict hasil lengkap atau None kalau gagal.
     """
+    try:
+        # 1. Ambil data dari Yahoo Finance
+        result = get_stock_data(ticker)
+        if result is None:
+            return None
 
-    # 1. Ambil data dari Yahoo Finance
-    result = get_stock_data(ticker)
-    if result is None:
+        df   = result["df"]
+        nama = result["nama"]
+
+        # 2. Hitung harga dan perubahan
+        harga_info = get_harga_sekarang(result)
+
+        # 3. Hitung indikator teknikal
+        indikator = hitung_semua_indikator(df)
+
+        # 4. Ambil MACD series untuk normalisasi
+        _, macd_data = calculate_macd(df)
+        macd_series  = macd_data["histogram"]
+
+        # 5. Jalankan fuzzy engine
+        hasil_fuzzy = analyze(
+            rsi_val      = indikator["rsi"],
+            macd_raw     = indikator["macd"],
+            macd_series  = macd_series,
+            volume_ratio = indikator["volume_ratio"]
+        )
+
+        # 6. Ambil data chart
+        chart_data = get_data_chart(result, n_hari=60)
+
+        return {
+            # Info saham
+            "ticker"          : ticker,
+            "nama"            : nama,
+            "harga"           : harga_info["harga_sekarang"],
+            "perubahan_persen": harga_info["perubahan_persen"],
+            "naik"            : harga_info["naik"],
+
+            # Indikator teknikal
+            "rsi"             : indikator["rsi"],
+            "rsi_label"       : indikator["rsi_label"],
+            "macd"            : indikator["macd"],
+            "macd_normalized" : hasil_fuzzy["macd_normalized"],
+            "macd_label"      : indikator["macd_label"],
+            "volume_ratio"    : indikator["volume_ratio"],
+            "vol_label"       : indikator["vol_label"],
+
+            # Hasil fuzzy
+            "score"           : hasil_fuzzy["score"],
+            "rekomendasi"     : hasil_fuzzy["rekomendasi"],
+            "fuzzifikasi"     : hasil_fuzzy["fuzzifikasi"],
+            "rules_aktif"     : hasil_fuzzy["rules_aktif"],
+
+            # Data grafik
+            "chart"           : chart_data,
+        }
+    except Exception as e:
+        print(f"Error saat memproses {ticker}: {str(e)}")
         return None
-
-    df   = result["df"]
-    nama = result["nama"]
-
-    # 2. Hitung harga dan perubahan
-    harga_info = get_harga_sekarang(result)
-
-    # 3. Hitung indikator teknikal
-    indikator = hitung_semua_indikator(df)
-
-    # 4. Ambil MACD series untuk normalisasi
-    _, macd_data = calculate_macd(df)
-    macd_series  = macd_data["histogram"]
-
-    # 5. Jalankan fuzzy engine
-    hasil_fuzzy = analyze(
-        rsi_val      = indikator["rsi"],
-        macd_raw     = indikator["macd"],
-        macd_series  = macd_series,
-        volume_ratio = indikator["volume_ratio"]
-    )
-
-    # 6. Ambil data chart
-    chart_data = get_data_chart(result, n_hari=60)
-
-    return {
-        # Info saham
-        "ticker"          : ticker,
-        "nama"            : nama,
-        "harga"           : harga_info["harga_sekarang"],
-        "perubahan_persen": harga_info["perubahan_persen"],
-        "naik"            : harga_info["naik"],
-
-        # Indikator teknikal
-        "rsi"             : indikator["rsi"],
-        "rsi_label"       : indikator["rsi_label"],
-        "macd"            : indikator["macd"],
-        "macd_normalized" : hasil_fuzzy["macd_normalized"],
-        "macd_label"      : indikator["macd_label"],
-        "volume_ratio"    : indikator["volume_ratio"],
-        "vol_label"       : indikator["vol_label"],
-
-        # Hasil fuzzy
-        "score"           : hasil_fuzzy["score"],
-        "rekomendasi"     : hasil_fuzzy["rekomendasi"],
-        "fuzzifikasi"     : hasil_fuzzy["fuzzifikasi"],
-        "rules_aktif"     : hasil_fuzzy["rules_aktif"],
-
-        # Data grafik
-        "chart"           : chart_data,
-    }
 
 
 # ─────────────────────────────────────────────────────
@@ -168,7 +171,6 @@ def get_stocks():
             })
         else:
             # Untuk endpoint /stocks, tidak perlu kirim data chart
-            # (chart dikirim di endpoint /analyze saja)
             data_ringkas = {k: v for k, v in data.items() if k != "chart"}
             hasil.append(data_ringkas)
 
@@ -193,8 +195,6 @@ def analyze_saham(ticker):
     """
     Return analisis lengkap satu saham.
     Frontend pakai ini untuk halaman detail.
-
-    Contoh URL: http://localhost:5000/api/analyze/BBCA
     """
     ticker = ticker.upper()
     print(f"\n[API] GET /api/analyze/{ticker}")
@@ -224,8 +224,7 @@ def analyze_saham(ticker):
 
 
 # ─────────────────────────────────────────────────────
-# ENDPOINT 3: GET /api/health
-# Cek apakah server berjalan (untuk debugging)
+# ENDPOINT BONUS & DEBUGGING
 # ─────────────────────────────────────────────────────
 
 @app.route('/api/health', methods=['GET'])
@@ -251,22 +250,20 @@ def get_universe():
 # ─────────────────────────────────────────────────────
 
 if __name__ == '__main__':
+    # Membaca port dinamis dari Render (Default ke 5000 jika dijalankan lokal)
+    port = int(os.environ.get("PORT", 5000))
+    
     print("=" * 50)
     print("  FuzzyStock API Server")
-    print("  http://localhost:5000")
+    print(f"  Berjalan pada port: {port}")
     print("=" * 50)
-    print("\nEndpoint tersedia:")
-    print("  GET /api/health")
-    print("  GET /api/stocks")
-    print("  GET /api/analyze/<ticker>")
-    print("\nContoh:")
-    print("  http://localhost:5000/api/health")
-    print("  http://localhost:5000/api/analyze/BBCA")
-    print("\n" + "=" * 50)
-
+    
+    # Matikan debug=True saat di-deploy ke Render agar berjalan stabil
+    is_production = os.environ.get("PORT") is not None
+    
     app.run(
-        host="0.0.0.0",  # bisa diakses dari mana saja di jaringan lokal
-        port=5000,
-        debug=True,
-        use_reloader=True,
+        host="0.0.0.0",  # Wajib 0.0.0.0 agar bisa diakses secara publik oleh internet/Render
+        port=port,
+        debug=not is_production,
+        use_reloader=not is_production,
     )

@@ -23,6 +23,8 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F6F3;color:#181C17
   --green:#1A9B72; --green-l:#E6F5EF; --green-m:#9FDBC6; --green-d:#0E6B4F;
   --red:#D44848; --red-l:#FDEEED; --red-m:#F5AAAA;
   --amber:#B87318; --amber-l:#FDF4E7; --amber-m:#EDCA8A;
+  /* Tambahan Token Blue yang Typo/Kurang Sebelumnya */
+  --blue:#3B82F6; --blue-l:#EFF6FF; --blue-m:#BFDBFE;
   --f:'Plus Jakarta Sans',sans-serif; --mono:'DM Mono',monospace;
   --sh:0 1px 3px rgba(0,0,0,.05);
   --sh-md:0 4px 16px rgba(0,0,0,.08),0 1px 3px rgba(0,0,0,.04);
@@ -184,7 +186,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F6F3;color:#181C17
 </head>
 <body>
 
-<!-- NAVBAR -->
 <nav class="navbar">
   <div class="nav-left">
     <a class="nav-brand" href="#">
@@ -209,15 +210,12 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F6F3;color:#181C17
 
 <datalist id="stock-search-list"></datalist>
 
-<!-- TICKER TAPE -->
 <div class="ticker">
   <div class="ticker-track" id="ticker-track">
-    <!-- Diisi oleh JavaScript dari API -->
     <div class="ti"><span class="ti-sym">LOADING</span><span class="ti-price">...</span></div>
   </div>
 </div>
 
-<!-- HERO -->
 <section class="hero">
   <div class="hero-eyebrow"><div class="eyebrow-dot"></div>Sistem Pendukung Keputusan Investasi</div>
   <h1>Analisis saham lebih<br/><span class="hl">cerdas</span> dengan<br/>logika fuzzy</h1>
@@ -231,7 +229,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F6F3;color:#181C17
   </div>
 </section>
 
-<!-- STATS -->
 <div class="stats-strip">
   <div class="stats-inner">
     <div class="stat-cell"><span class="stat-num">8</span><span class="stat-lbl">Saham IDX tersedia</span></div>
@@ -241,13 +238,11 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F6F3;color:#181C17
   </div>
 </div>
 
-<!-- TAGLINE -->
 <section class="tagline-section">
   <h2>Beli saham pilihan mu<br/>berdasarkan analisis<br/><span class="hl">berbasis data</span></h2>
   <p>Membantu mengetahui apakah saham favorit sedang dalam kondisi terbaik untuk masuk ke portofolio.</p>
 </section>
 
-<!-- STOCK GRID -->
 <div id="saham" style="background:var(--bg);">
   <div class="section">
     <div class="sec-head">
@@ -263,7 +258,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F6F3;color:#181C17
       </div>
     </div>
     <div class="stock-grid" id="stock-grid">
-      <!-- Skeleton loading -->
       <div class="scard scard-loading" style="height:180px;"><div class="skeleton" style="height:100%;border-radius:12px;"></div></div>
       <div class="scard scard-loading" style="height:180px;"><div class="skeleton" style="height:100%;border-radius:12px;"></div></div>
       <div class="scard scard-loading" style="height:180px;"><div class="skeleton" style="height:100%;border-radius:12px;"></div></div>
@@ -276,7 +270,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F6F3;color:#181C17
   </div>
 </div>
 
-<!-- METHODOLOGY -->
 <section class="method-section" id="metode">
   <div class="method-inner">
     <div class="method-header">
@@ -285,7 +278,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F6F3;color:#181C17
     </div>
 
     <div class="method-grid">
-      <!-- RSI Card -->
       <div class="method-card">
         <div class="method-card-header">
           <div class="method-icon" style="background:#FDEEED;color:#D44848;">
@@ -305,7 +297,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F6F3;color:#181C17
         <div class="method-badge" style="background:var(--red-l);color:var(--red);border:1px solid var(--red-m);">RSI = 100 − (100 / (1 + RS))</div>
       </div>
 
-      <!-- MACD Card -->
       <div class="method-card">
         <div class="method-card-header">
           <div class="method-icon" style="background:#E6F5EF;color:#0E6B4F;">
@@ -326,7 +317,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F6F3;color:#181C17
       </div>
     </div>
 
-    <!-- Volume Card (full width) -->
     <div class="method-card">
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5rem;">
         <div>
@@ -339,7 +329,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F6F3;color:#181C17
               <div class="method-card-subtitle" style="color:#534AB7;">Validator kekuatan sinyal</div>
             </div>
           </div>
-          <p>Volume adalah jumlah lembar saham yang diperdagangkan. Fungsinya sebagai <strong>validator</strong> — memperkuat atau memperlemah sinyal dari RSI dan MACD.</p>
+          <p>Volume adalah jumlah lembar saham yang diperdagangkan. Fungsinya sebagai <strong>validator</strong> — memperkuat atau memperlemah sinyal dari RSI and MACD.</p>
           <p style="margin-top:.5rem;font-size:12px;color:var(--amber);">Kita pakai Volume Ratio karena perlu dibandingkan antar saham yang berbeda.</p>
         </div>
         <div>
@@ -373,7 +363,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F6F3;color:#181C17
   </div>
 </section>
 
-<!-- HOW IT WORKS -->
 <section class="how-section">
   <div class="how-inner">
     <div class="how-header">
@@ -382,6 +371,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F6F3;color:#181C17
     </div>
     <div class="how-grid">
       <div class="how-cell">
+        <div class="how-step">01 / 03</div>
         <div class="how-step">01 / 03</div>
         <div class="how-icon-box"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
         <div class="how-title">Ambil Data Historis</div>
